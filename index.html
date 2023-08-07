@@ -2,5 +2,80 @@
 <html lang="en">
   <head>
     <title>Tier Map</title>
+    <style>
+      body {
+        margin: 0;
+        display: grid;
+        width: 100dvw;
+        height: 100dvh;
+        grid-template-rows: 1fr;
+      }
+      .map-grid {
+        display: grid;
+        grid-template-rows: 1fr;
+      }
+    </style>
   </head>
+  <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "ol/Map.js": "https://ga.jspm.io/npm:ol@7.4.0/Map.js",
+          "ol/View.js": "https://ga.jspm.io/npm:ol@7.4.0/View.js",
+          "ol/layer/WebGLTile.js": "https://ga.jspm.io/npm:ol@7.4.0/layer/WebGLTile.js",
+          "ol/tilegrid/TileGrid.js": "https://ga.jspm.io/npm:ol@7.4.0/tilegrid/TileGrid.js",
+          "ol/source/TileDebug.js": "https://ga.jspm.io/npm:ol@7.4.0/source/TileDebug.js",
+          "ol/proj/Projection.js": "https://ga.jspm.io/npm:ol@7.4.0/proj/Projection.js"
+        },
+        "scopes": {
+          "https://ga.jspm.io/": {
+            "pbf": "https://ga.jspm.io/npm:pbf@3.2.1/index.js",
+            "rbush": "https://ga.jspm.io/npm:rbush@3.0.1/rbush.min.js",
+            "ieee754": "https://ga.jspm.io/npm:ieee754@1.2.1/index.js"
+          }
+        }
+      }
+    </script>
+    <script type="module">
+      import Map from 'ol/Map.js';
+      import View from 'ol/View.js';
+      import TileLayer from 'ol/layer/WebGLTile.js';
+      import TileGrid from 'ol/tilegrid/TileGrid.js';
+      import TileDebug from 'ol/source/TileDebug.js';
+      import Projection from 'ol/proj/Projection.js';
+
+      // Flat 2D projection
+      const projection = new Projection({
+        code: 'EPSG:4326',
+        units: 'degrees',
+      });
+      const a32 = [...Array(32).keys()];
+      const tilegrid = new TileGrid({
+        resolutions: a32.map(x => 2**(2-x)),
+        tileSize: [256, 256],
+        origin: [0, 0]
+      });
+      const debugLayer = new TileLayer({
+        source: new TileDebug({
+          projection: projection,
+          template: 'z:{z} x:{x} y:{y}',
+          tileGrid: tilegrid,
+          zDirection: 1,
+        }),
+      });
+      const map = new Map({
+        controls: [],
+        layers: [debugLayer],
+        target: 'map',
+        view: new View({
+          projection: projection,
+          center: [0, 0],
+          zoom: 1,
+        }),
+      });
+    </script>
+    <div class="map-grid">
+      <div id="map" class="map"></div>
+    </div>
+  </body>  
 </html>
