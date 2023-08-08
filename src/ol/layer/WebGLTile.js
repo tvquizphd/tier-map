@@ -16,63 +16,11 @@ import {
 } from 'ol/style/expressions.js';
 
 /**
- * @typedef {import("../source/DataTile.js").default|import("../source/TileImage.js").default} SourceType
- */
-
-/**
- * @typedef {Object} Style
- * Translates tile data to rendered pixels.
- *
- * @property {Object<string, (string|number)>} [variables] Style variables.  Each variable must hold a number or string.  These
- * variables can be used in the `color`
- * {@link import("../style/expressions.js").ExpressionValue expressions}, using the `['var', 'varName']` operator.
- * To update style variables, use the {@link import("./WebGLTile.js").default#updateStyleVariables} method.
- * @property {import("../style/expressions.js").ExpressionValue} [color] An expression applied to color values.
- */
-
-/**
  * @typedef {Object} Options
  * @property {Style} [style] Style to apply to the layer.
- * @property {string} [className='ol-layer'] A CSS class name to set to the layer element.
- * @property {number} [opacity=1] Opacity (0, 1).
- * @property {boolean} [visible=true] Visibility.
- * @property {import("../extent.js").Extent} [extent] The bounding extent for layer rendering.  The layer will not be
- * rendered outside of this extent.
- * @property {number} [zIndex] The z-index for layer rendering.  At rendering time, the layers
- * will be ordered, first by Z-index and then by position. When `undefined`, a `zIndex` of 0 is assumed
- * for layers that are added to the map's `layers` collection, or `Infinity` when the layer's `setMap()`
- * method was used.
- * @property {number} [minResolution] The minimum resolution (inclusive) at which this layer will be
- * visible.
- * @property {number} [maxResolution] The maximum resolution (exclusive) below which this layer will
- * be visible.
- * @property {number} [minZoom] The minimum view zoom level (exclusive) above which this layer will be
- * visible.
- * @property {number} [maxZoom] The maximum view zoom level (inclusive) at which this layer will
- * be visible.
- * @property {number} [preload=0] Preload. Load low-resolution tiles up to `preload` levels. `0`
- * means no preloading.
  * @property {SourceType} [source] Source for this layer.
- * @property {Array<SourceType>|function(import("../extent.js").Extent, number):Array<SourceType>} [sources] Array
- * of sources for this layer. Takes precedence over `source`. Can either be an array of sources, or a function that
- * expects an extent and a resolution (in view projection units per pixel) and returns an array of sources. See
- * {@link module:ol/source.sourcesFromTileGrid} for a helper function to generate sources that are organized in a
- * pyramid following the same pattern as a tile grid. **Note:** All sources must have the same band count and content.
- * @property {import("../Map.js").default} [map] Sets the layer as overlay on a map. The map will not manage
- * this layer in its layers collection, and the layer will be rendered on top. This is useful for
- * temporary layers. The standard way to add a layer to a map and have it managed by the map is to
- * use {@link module:ol/Map~Map#addLayer}.
- * @property {boolean} [useInterimTilesOnError=true] Use interim tiles on error.
  * @property {number} [cacheSize=512] The internal texture cache size.  This needs to be large enough to render
  * two zoom levels worth of tiles.
- */
-
-/**
- * @typedef {Object} ParsedStyle
- * @property {string} vertexShader The vertex shader.
- * @property {string} fragmentShader The fragment shader.
- * @property {Object<string,import("../webgl/Helper.js").UniformValue>} uniforms Uniform definitions.
- * @property {Array<import("../webgl/PaletteTexture.js").default>} paletteTextures Palette textures.
  */
 
 /**
@@ -230,16 +178,10 @@ function parseStyle(style, bandCount) {
 
 /**
  * @classdesc
- * For layer sources that provide pre-rendered, tiled images in grids that are
- * organized by zoom levels for specific resolutions.
- * Note that any property set in the options is set as a {@link module:ol/Object~BaseObject}
- * property on the layer object; for example, setting `title: 'My Title'` in the
- * options means that `title` is observable, and has get/set accessors.
  *
  * @extends BaseTileLayer<SourceType, WebGLTileLayerRenderer>
  * @fires import("../render/Event.js").RenderEvent
-* @api
-*/
+ */
 class WebGLTileLayer extends BaseTileLayer {
   /**
    * @param {Options} options Tile layer options.
