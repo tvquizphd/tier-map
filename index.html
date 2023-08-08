@@ -51,13 +51,6 @@
       import TileDebug from 'ol/source/TileDebug.js';
       import Projection from 'ol/proj/Projection.js';
 
-      const source = new XYZ({
-        url: 'img/tile.png'
-      });
-      const layer = new TileLayer({
-        //source, style: { color: [255, 0, 255, 1] }
-        source, style: { color: [0, 255, 0, 1] }
-      });
       // Flat 2D projection
       const projection = new Projection({
         code: 'EPSG:4326',
@@ -68,6 +61,16 @@
         resolutions: a28.map(x => 2**(0-x)),
         tileSize: [256, 256],
         origin: [0, 0]
+      });
+      const source = new XYZ({
+        projection: projection,
+        url: 'img/tile.png',
+        tileGrid: tilegrid,
+        zDirection: 1,
+      });
+      const layer = new TileLayer({
+        //source, style: { color: [255, 0, 255, 1] }
+        source, style: { color: [0, 255, 0, 1] }
       });
       const debugLayer = new TileLayer({
         source: new TileDebug({
