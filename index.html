@@ -20,12 +20,18 @@
     <script type="importmap">
       {
         "imports": {
-          "ol/Map.js": "https://ga.jspm.io/npm:ol@7.4.0/Map.js",
-          "ol/View.js": "https://ga.jspm.io/npm:ol@7.4.0/View.js",
-          "ol/layer/WebGLTile.js": "https://ga.jspm.io/npm:ol@7.4.0/layer/WebGLTile.js",
+          "ol/layer/WebGLTile.js": "./src/ol/layer/WebGLTile.js",
+          "ol/layer/BaseTile.js": "https://ga.jspm.io/npm:ol@7.4.0/layer/BaseTile.js",
+          "ol/layer/Property.js": "https://ga.jspm.io/npm:ol@7.4.0/layer/Property.js",
+          "ol/style/expressions.js": "https://ga.jspm.io/npm:ol@7.4.0/style/expressions.js",
+
+          "ol/renderer/webgl/TileLayer.js": "https://ga.jspm.io/npm:ol@7.4.0/renderer/webgl/TileLayer.js",
           "ol/tilegrid/TileGrid.js": "https://ga.jspm.io/npm:ol@7.4.0/tilegrid/TileGrid.js",
           "ol/source/TileDebug.js": "https://ga.jspm.io/npm:ol@7.4.0/source/TileDebug.js",
-          "ol/proj/Projection.js": "https://ga.jspm.io/npm:ol@7.4.0/proj/Projection.js"
+          "ol/proj/Projection.js": "https://ga.jspm.io/npm:ol@7.4.0/proj/Projection.js",
+          "ol/source/XYZ.js": "https://ga.jspm.io/npm:ol@7.4.0/source/XYZ.js",
+          "ol/View.js": "https://ga.jspm.io/npm:ol@7.4.0/View.js",
+          "ol/Map.js": "https://ga.jspm.io/npm:ol@7.4.0/Map.js"
         },
         "scopes": {
           "https://ga.jspm.io/": {
@@ -39,19 +45,24 @@
     <script type="module">
       import Map from 'ol/Map.js';
       import View from 'ol/View.js';
+      import XYZ from 'ol/source/XYZ.js';
       import TileLayer from 'ol/layer/WebGLTile.js';
       import TileGrid from 'ol/tilegrid/TileGrid.js';
       import TileDebug from 'ol/source/TileDebug.js';
       import Projection from 'ol/proj/Projection.js';
 
+      const source = new XYZ({
+        url: 'img/tile.jpg'
+      });
+      const layer = new TileLayer({ source });
       // Flat 2D projection
       const projection = new Projection({
         code: 'EPSG:4326',
         units: 'degrees',
       });
-      const a32 = [...Array(32).keys()];
+      const a28 = [...Array(28).keys()];
       const tilegrid = new TileGrid({
-        resolutions: a32.map(x => 2**(2-x)),
+        resolutions: a28.map(x => 2**(0-x)),
         tileSize: [256, 256],
         origin: [0, 0]
       });
@@ -65,12 +76,12 @@
       });
       const map = new Map({
         controls: [],
-        layers: [debugLayer],
+        layers: [layer, debugLayer],
         target: 'map',
         view: new View({
           projection: projection,
           center: [0, 0],
-          zoom: 1,
+          zoom: 2,
         }),
       });
     </script>
