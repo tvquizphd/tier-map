@@ -121,7 +121,12 @@ function parseStyle(style, bandCount) {
 
   if (style.color !== undefined) {
     const color = expressionToGlsl(context, style.color, ValueTypes.COLOR);
-    pipeline.push(`color = ${color};`);
+    pipeline.push(`
+      float a = color.a;
+      float not_a = 1. - a;
+      color.rgb = ${color}.rgb * not_a + color.rgb * a;
+      color.a = 1.;
+    `);
   }
 
   /** @type {Object<string,import("../webgl/Helper").UniformValue>} */
@@ -233,8 +238,8 @@ function parseStyle(style, bandCount) {
  *
  * @extends BaseTileLayer<SourceType, WebGLTileLayerRenderer>
  * @fires import("../render/Event.js").RenderEvent
- * @api
- */
+* @api
+*/
 class WebGLTileLayer extends BaseTileLayer {
   /**
    * @param {Options} options Tile layer options.

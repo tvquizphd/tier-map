@@ -52,9 +52,12 @@
       import Projection from 'ol/proj/Projection.js';
 
       const source = new XYZ({
-        url: 'img/tile.jpg'
+        url: 'img/tile.png'
       });
-      const layer = new TileLayer({ source });
+      const layer = new TileLayer({
+        //source, style: { color: [255, 0, 255, 1] }
+        source, style: { color: [0, 255, 0, 1] }
+      });
       // Flat 2D projection
       const projection = new Projection({
         code: 'EPSG:4326',
