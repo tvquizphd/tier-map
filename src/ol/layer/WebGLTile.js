@@ -29,6 +29,7 @@ import {
  * @return {ParsedStyle} Shaders and uniforms generated from the style.
  */
 function parseStyle(style, bandCount) {
+   
   const vertexShader = `
     attribute vec2 ${Attributes.TEXTURE_COORD};
     uniform mat4 ${Uniforms.TILE_TRANSFORM};
@@ -39,6 +40,8 @@ function parseStyle(style, bandCount) {
     uniform float ${Uniforms.TEXTURE_ORIGIN_Y};
     uniform float ${Uniforms.DEPTH};
 
+    uniform vec4 u_offset;
+
     varying vec2 v_textureCoord;
     varying vec2 v_mapCoord;
 
@@ -48,7 +51,7 @@ function parseStyle(style, bandCount) {
         ${Uniforms.TEXTURE_ORIGIN_X} + ${Uniforms.TEXTURE_RESOLUTION} * ${Uniforms.TEXTURE_PIXEL_WIDTH} * v_textureCoord[0],
         ${Uniforms.TEXTURE_ORIGIN_Y} - ${Uniforms.TEXTURE_RESOLUTION} * ${Uniforms.TEXTURE_PIXEL_HEIGHT} * v_textureCoord[1]
       );
-      gl_Position = ${Uniforms.TILE_TRANSFORM} * vec4(${Attributes.TEXTURE_COORD}, ${Uniforms.DEPTH}, 1.0);
+      gl_Position = ${Uniforms.TILE_TRANSFORM} * vec4(${Attributes.TEXTURE_COORD}, ${Uniforms.DEPTH}, 1.0) + u_offset;
     }
   `;
 
@@ -139,6 +142,8 @@ function parseStyle(style, bandCount) {
     uniform float ${Uniforms.RESOLUTION};
     uniform float ${Uniforms.ZOOM};
 
+    uniform float u_shown;
+
     ${uniformDeclarations.join('\n')}
 
     ${functionDefintions.join('\n')}
@@ -148,7 +153,8 @@ function parseStyle(style, bandCount) {
         v_mapCoord[0] < ${Uniforms.RENDER_EXTENT}[0] ||
         v_mapCoord[1] < ${Uniforms.RENDER_EXTENT}[1] ||
         v_mapCoord[0] > ${Uniforms.RENDER_EXTENT}[2] ||
-        v_mapCoord[1] > ${Uniforms.RENDER_EXTENT}[3]
+        v_mapCoord[1] > ${Uniforms.RENDER_EXTENT}[3] ||
+        (u_shown <= 0.5)
       ) {
         discard;
       }
@@ -196,6 +202,8 @@ class WebGLTileLayer extends BaseTileLayer {
     delete options.cacheSize;
 
     super(options);
+
+    this.has_rendered_ = false;
 
     /**
      * @type {Array<SourceType>|function(import("../extent.js").Extent, number):Array<SourceType>}
@@ -292,16 +300,45 @@ class WebGLTileLayer extends BaseTileLayer {
       : 4;
   }
 
+  randomBoolean (probability) {
+    return Math.random() <= probability;
+  }
+
+  randomFloatInRange (min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
   createRenderer() {
+
     const parsedStyle = parseStyle(this.style_, this.getSourceBandCount_());
 
-    return new WebGLTileLayerRenderer(this, {
+    const renderer = new WebGLTileLayerRenderer(this, {
       vertexShader: parsedStyle.vertexShader,
       fragmentShader: parsedStyle.fragmentShader,
       uniforms: parsedStyle.uniforms,
       cacheSize: this.cacheSize_,
       paletteTextures: parsedStyle.paletteTextures,
     });
+    return renderer;
+  }
+
+  bindCustomTextures(source, region, customProps) {
+    const { helper, program_ } = this.getRenderer();
+    const dx = this.randomFloatInRange(-0.05, 0.05);
+    const dy = this.randomFloatInRange(-0.05, 0.05);
+
+    const is_stable = +this.randomBoolean(0.90);
+    const u_offset = [dx, dy, 0, 0];
+
+    helper.currentProgram_ = program_;
+    helper.gl_.useProgram(program_);
+
+    const uniforms = source.fromUserState(customProps, {
+      is_stable, u_offset
+    });
+
+    helper.setUniformFloatValue('u_shown', uniforms.u_shown);
+    helper.setUniformFloatVec4('u_offset', uniforms.u_offset);
   }
 
   /**
@@ -310,12 +347,36 @@ class WebGLTileLayer extends BaseTileLayer {
    * @return {HTMLElement} Canvas.
    */
   renderSources(frameState, sources) {
-    const layerRenderer = this.getRenderer();
+
+    const renderer = this.getRenderer();
+
+    // Rewrite to re-bind on each tile
+    if (!this.has_rendered_ && renderer) {
+      const bound = renderer.renderTile.bind(renderer);
+      this.has_rendered_ = true;
+      // Provide custom input to shaders
+      renderer.renderTile = (...args) => {
+        const level = renderer.tempTileCoord_[0];
+        const ranges = renderer.tempTileRange_;
+        
+        const region = {...ranges, level};
+
+        const [ renderExtent, tileResolution ] = args.slice(3, 5);
+        const [ tileExtent ] = args.slice(-4, -3);
+        const { tileCoord } = args[0].tile;
+        const customProps = {
+          tileCoord, renderExtent, tileResolution, tileExtent
+        };
+        this.bindCustomTextures(sources[0], region, customProps);
+        bound(...args);
+      }
+    }
+
     let canvas;
     for (let i = 0, ii = sources.length; i < ii; ++i) {
       this.renderedSource_ = sources[i];
-      if (layerRenderer.prepareFrame(frameState)) {
-        canvas = layerRenderer.renderFrame(frameState);
+      if (renderer.prepareFrame(frameState)) {
+        canvas = renderer.renderFrame(frameState);
       }
     }
     return canvas;

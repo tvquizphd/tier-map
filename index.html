@@ -27,7 +27,6 @@
 
           "ol/renderer/webgl/TileLayer.js": "https://ga.jspm.io/npm:ol@7.4.0/renderer/webgl/TileLayer.js",
           "ol/tilegrid/TileGrid.js": "https://ga.jspm.io/npm:ol@7.4.0/tilegrid/TileGrid.js",
-          "ol/source/TileDebug.js": "https://ga.jspm.io/npm:ol@7.4.0/source/TileDebug.js",
           "ol/proj/Projection.js": "https://ga.jspm.io/npm:ol@7.4.0/proj/Projection.js",
           "ol/source/XYZ.js": "https://ga.jspm.io/npm:ol@7.4.0/source/XYZ.js",
           "ol/View.js": "https://ga.jspm.io/npm:ol@7.4.0/View.js",
@@ -48,15 +47,15 @@
       import XYZ from 'ol/source/XYZ.js';
       import TileLayer from 'ol/layer/WebGLTile.js';
       import TileGrid from 'ol/tilegrid/TileGrid.js';
-      import TileDebug from 'ol/source/TileDebug.js';
       import Projection from 'ol/proj/Projection.js';
 
-      // Flat 2D projection
+      const a28 = [...Array(28).keys()];
+
+      // Flat 2D projection with 28 zoom levels
       const projection = new Projection({
         code: 'EPSG:4326',
         units: 'degrees',
       });
-      const a28 = [...Array(28).keys()];
       const tilegrid = new TileGrid({
         resolutions: a28.map(x => 2**(0-x)),
         tileSize: [256, 256],
@@ -68,27 +67,27 @@
         tileGrid: tilegrid,
         zDirection: 1,
       });
-      const layer = new TileLayer({
-        //source, style: { color: [255, 0, 255, 1] }
-        source, style: { color: [0, 255, 0, 1] }
+      source.fromUserState = (props, uniforms) => {
+        const [level, x, y] = props.tileCoord;
+        if (uniforms.is_stable > 0.5) { 
+          const dx = 0;
+          const dy = 0;
+          uniforms.u_offset[0] = dx;
+          uniforms.u_offset[1] = dy;
+        }
+        uniforms.is_stable = 1.;
+        return uniforms;
+      };
+      const view = new View({
+        projection: projection,
+        center: [0, 0],
+        zoom: 2,
       });
-      const debugLayer = new TileLayer({
-        source: new TileDebug({
-          projection: projection,
-          template: 'z:{z} x:{x} y:{y}',
-          tileGrid: tilegrid,
-          zDirection: 1,
-        }),
-      });
-      const map = new Map({
-        controls: [],
-        layers: [layer, debugLayer],
-        target: 'map',
-        view: new View({
-          projection: projection,
-          center: [0, 0],
-          zoom: 2,
-        }),
+      const layers = [
+        new TileLayer({ source })
+      ];
+      new Map({
+        view, layers, controls: [], target: 'map'
       });
     </script>
     <div class="map-grid">
